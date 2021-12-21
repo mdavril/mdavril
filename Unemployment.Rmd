@@ -1,0 +1,148 @@
+---
+title: "Unemployment"
+author: "Manuel Davril"
+date: "August 2021"
+output:
+  pdf_document: default
+  html_document: default
+
+---
+
+# Download data
+
+```{r download-data, warning=FALSE, message=FALSE}
+library(readr)
+library(tidyverse)
+library(broom)
+library(geofacet)
+library(ggplot2)
+library(ggrepel)
+library(patchwork)
+
+
+unemployment <- read_csv("unemployment.csv")
+
+```
+
+# Data from US Bureau of Labor Statistics (BLS) to show the trends in employment rate for all 50 states between 2006 and 2016. 
+
+
+```{r clean-data, fig.width = 15, fig.height = 12, warning=FALSE, message=FALSE}
+
+division <-
+ggplot(unemployment,
+       aes(date,
+           unemployment,
+           fill = division))+
+  geom_col() +
+  coord_flip() +
+  theme_bw() +
+  facet_geo(~ state)+
+  labs(title = "US Unemployment",
+       x = "",
+       y = "Unemployment",
+       fill = "Division",
+       subtitle = "Data from 2006 to 2016",
+       caption = "Source: US Bureau of Labor Statistics")+
+  theme(plot.title = element_text(size = 15, face = 'bold'),
+        plot.subtitle = element_text(size = 12),
+        plot.caption = element_text(size = 10, face = "bold"),
+        legend.title = element_text(face = "bold"))
+
+
+region <-
+ggplot(unemployment,
+       aes(date,
+           unemployment,
+           fill = region))+
+  geom_col() +
+  coord_flip() +
+  theme_bw() +
+  facet_geo(~ state)+
+  labs(title = "US Unemployment",
+       x = "",
+       y = "Unemployment",
+       fill = "Region",
+       subtitle = "Data from 2006 to 2016",
+       caption = "Source: US Bureau of Labor Statistics")+
+  theme(plot.title = element_text(size = 15, face = 'bold'),
+        plot.subtitle = element_text(size = 12),
+        plot.caption = element_text(size = 10, face = "bold"),
+        legend.title = element_text(face = "bold"))
+
+```
+
+```{r plot-for-fun, fig.width = 15, fig.height = 12, warning=FALSE, message=FALSE}
+division
+region
+```
+
+
+# Slopegraphs
+
+**Story**
+
+The most affected state in 2009 was Michigan, then Ohio, and lastly Rhode Island. The least affected during the same year was North Dakota, then Nebraska, lastly South Dakota. Looks like the Midwest, specifically the West North Central division, was the least affected. However, the most affected states are from different regions and divisions.
+
+The most affected state in 2006 was Mississippi, then Alaska, and lastly Michigan. The least affected during the same year was Hawaii, then Florida, lastly North Dakota.
+
+The graph shows how it was affected per year and it is coloured by division.
+
+
+```{r slopegraph, fig.width = 15, fig.height = 20, warning=FALSE, message=FALSE}
+
+slopegraph <-
+  unemployment %>%
+  filter(year %in% c(2006, 2009)) %>%
+  filter(month_name == 'January') %>%
+  mutate(year = factor(year)) %>%
+  mutate(label_first = ifelse(year == 2006,
+                              paste0(state, ": ", unemployment),
+                              NA),
+         label_last = ifelse(year == 2009,
+                             unemployment,
+                             NA))
+  
+sg <-
+ggplot(slopegraph,
+       aes(x = year,
+           y =  unemployment,
+           colour = region,
+           group = state))+
+  geom_line(size = 1)+
+  geom_text_repel(aes(label = label_first),
+                  direction = 'y',
+                  nudge_x = -1,
+                  seed = 1234)+
+  geom_text_repel(aes(label = label_last),
+                  direction = 'y',
+                  nudge_x = 1,
+                  seed = 1234)+
+  theme_bw()+
+  facet_wrap(~division, ncol = 2)+
+  labs(title = "Unemployment Slopegraph",
+       x = "",
+       y = "Unemployment",
+       color = "Region",
+       subtitle = "Unemployment rate in 2006 and 2009",
+       caption = "Source: US Bureau of Labor Statistics")+
+  theme(plot.title = element_text(size = 15, face = "bold"),
+        plot.subtitle = element_text(size = 12),
+        plot.caption = element_text(size = 10, face = "bold"),
+        legend.title = element_text(face = "bold"))
+
+        
+```
+
+```{r other-plot-for-fun, fig.width = 15, fig.height = 12, warning=FALSE, message=FALSE}
+slopegraph
+sg
+```
+
+```{r save-pdf, warning=FALSE, message=FALSE}
+
+ggsave('Division.pdf', division, width = 15, height = 12)
+ggsave('Region.pdf', region, width = 15, height = 12)
+ggsave('SG.pdf', sg, width = 15, height = 20)
+
+```

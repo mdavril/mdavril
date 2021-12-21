@@ -1,0 +1,51 @@
+---
+title: "regression"
+author: "Manuel Davril"
+date: "December 2021"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+# data
+```{r}
+library(readr)
+library(ggplot2)
+regression <- read.csv("regression-r.csv")
+```
+
+# scattergram: broadcast & sales
+```{r warning = FALSE, message = FALSE}
+ggplot(regression,
+       aes(BROADCAST,
+           NET.SALES)) +
+  geom_point() +
+  labs(x = "Broadcast",
+       y = "Net Sales")
+```
+
+# regression
+```{r}
+lm <- lm(NET.SALES ~ BROADCAST, data = regression)
+```
+
+# Visualize the line
+
+```{r warning=FALSE, message=FALSE}
+ggplot(regression,
+       aes(BROADCAST,
+           NET.SALES)) +
+  geom_point()+
+  geom_smooth(method = "lm") +
+  labs(x = "Broadcast",
+       y = "Net Sales")
+```
+# Show our coefficients 
+```{r warning=FALSE, message=FALSE}
+library(tidyverse)
+library(broom)
+
+tidy(lm)
+glance(lm)
+```
+

@@ -1,0 +1,108 @@
+---
+title: "Netflix and American Airlines Stock Market Price during Covid Pandemic"
+author: "Manuel Davril"
+date: "July 2021"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+# Load and clean data
+
+```{r load-libraries-data, warning=FALSE, message=FALSE}
+library(tidyverse)
+library(tidyquant)
+library(tidyverse)
+library(patchwork)
+library(broom)
+library(ggplot2)
+
+
+options("getSymbols.warning4.0"=FALSE)
+options("getSymbols.yahoo.warning"=FALSE)
+
+# Load data here
+tq_index('SP500')
+                 
+nf <- tq_get("NFLX",
+                 get = 'stock.prices',
+                 from = '2020-01-01')
+
+aa <- tq_get("AAL",
+             get = 'stock.prices',
+             from = '2020-01-01')
+
+```
+
+# Netflix and American Airlines Stocks during Covid Pandemic
+
+```{r coding, warning=FALSE, message=FALSE}
+
+# Netflix
+
+p1 <-
+ggplot(nf,
+       aes(date,
+           close))+
+
+  geom_candlestick(aes(open = open,
+                    high = high,
+                    low = low,
+                    close = close))+
+
+   annotate(geom = "rect",
+           xmin = as.Date("2020-03-01", "%Y-%m-%d"),
+           xmax = as.Date("2020-07-01", "%Y-%m-%d"),
+           ymin = min(nf$low),
+           ymax = max(nf$high),
+           fill = 'pink',
+           alpha = .2)+
+
+  labs(title = 'Netflix Stock Price',
+       subtitle = 'Data from 01/01/2020 to 07/25/2021',
+       x = "",
+       y = 'Price')+
+  
+  geom_smooth(method = 'lm',
+              colour = 'green',
+              size = .5)+
+  theme_minimal()+
+  theme(plot.subtitle = element_text(size = 6.5),
+        plot.title = element_text(face = "bold"))
+
+# American Airlines
+p2 <-
+ggplot(aa,
+       aes(date,
+           close))+
+  
+ geom_candlestick(aes(open = open,
+                    high = high,
+                    low = low,
+                    close = close))+
+  
+    annotate(geom = "rect",
+           xmin = as.Date("2020-03-01", "%Y-%m-%d"),
+           xmax = as.Date("2020-07-01", "%Y-%m-%d"),
+           ymin = min(aa$low),
+           ymax = max(aa$high),
+           fill = 'pink',
+           alpha = .2)+
+  
+  labs(title = 'American Airlines Stock Price',
+       subtitle = 'Data from 01/01/2020 to 07/25/2021',
+       x = "",
+       y = 'Price')+
+  
+  geom_smooth(method = 'lm',
+              colour = 'green',
+              size = .5)+
+  
+  theme_minimal()+
+  theme(plot.subtitle = element_text(size = 6.5),
+        plot.title = element_text(face = "bold"))
+
+# Mixed
+p1 / p2
+
+```

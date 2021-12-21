@@ -1,0 +1,464 @@
+---
+title: "Strikeouts on the Rise"
+output: flexdashboard::flex_dashboard
+runtime: shiny
+---
+
+```{r data, include = FALSE}
+
+library(Lahman)
+library(dplyr)
+library(shiny)
+library(pander)
+data(Teams)
+
+ave.so <- Teams$SO / Teams$G
+year <- Teams$yearID
+
+ave.so.min <- min(ave.so, na.rm = TRUE)
+ave.so.max <- max(ave.so, na.rm = TRUE)
+
+league.ave <- tapply(X = ave.so, 
+                     INDEX = as.factor(year), 
+                     FUN = "mean", 
+                     na.rm = TRUE)
+
+league.year <- as.numeric(names(league.ave))
+
+Teams$ave.so <- ave.so
+
+```
+
+
+
+Column {.sidebar}
+-----------------------------------------------------------------------
+
+**Wanna see the performance of your team?**
+
+```{r}
+
+selectInput(inputId = "my_team",
+            label = "Select a team:",
+            choices = c("New York Yankees",
+                        "Boston Red Sox",
+                        "Oakland Athletics",
+                        'Atlanta Braves',
+                        'Baltimore Orioles',
+                        'Chicago Cubs',
+                        'Cincinnati Reds',
+                        'Cleveland Indians',
+                        'Florida Marlins'),
+            selected = "team.names")
+
+
+
+```
+
+
+**Author:** Manuel Davril
+
+**Date:**  December 2021
+
+
+Column
+-----------------------------------------------------------------------
+
+### Strikeouts on the Rise
+
+```{r}
+
+renderPlot({
+
+index <- which(Teams$yearID <= 2012 & Teams$yearID >= 1900)
+
+Teams <- Teams[index, ]
+  
+index <- which(year <= 2012 & year >= 1900)
+
+ave.so <- ave.so[index]
+year <- year[index]
+
+index <- which(league.year <= 2012 
+               & league.year >= 1900)
+
+league.ave <- league.ave[index]
+league.year <- league.year[index]
+
+team.name <- input$my_team                  
+                                          
+
+dat.one.team <- filter(Teams, 
+                       name == team.name)   
+plot.new()
+
+plot.window(xlim = c(1900, 2012), 
+            ylim = c(ave.so.min, 
+                     ave.so.max))
+
+points(x = year, 
+       y = ave.so,
+       col = "gray85",
+       pch = 16,
+       cex = 0.75)
+
+axis(side = 1,                      # Add x-axis
+     lwd = 2,                       # Line width
+     hadj = -0.1,                   # Horizontal label position 
+     padj = -1,                     # Vertical label position
+     at = seq(from = 1900, 
+              to = 2010, 
+              by = 10))             # Specify tick label sequence
+
+axis(side = 4,                      # Add y-axis
+     lwd = 0,                       # Remove axis line
+     las = 1,                       # Rotate labels
+     col.axis = "gray85",           # Adjust label colors
+     at = seq(from = 0,             # Specify axis values
+              to = 9, 
+              by = 1), 
+     font.axis = 2)                 # Set labels to bold
+
+abline(h = 1:9,                     # Specify horizontal positions
+       lty = "dotted",              # Specify line type
+       col = "gray85")              # Specify line color
+
+mtext(text = "Strikeouts on the Rise",                    # Title text
+      family = "serif",                                   # Title font
+      padj = 0,                                           # Title vertical position
+      adj = 0,                                            # Title horizontal position
+      cex = 2)                                            # Title size
+
+mtext(text = paste0("There were more strikeouts in",
+                    " 2012 than at any other time ",
+                    "in major league history."),          # Subtitle text
+      padj = 2,                                           # Subtitle vertical position
+      adj = 0,                                            # Subtitle horizontal position
+      family = "serif",                                   # Subtitle font
+      col = "gray30",                                     # Subtitle color
+      cex = 1)                                            # Subtitle size
+
+points(x = league.year,               # Alternatively, use function 'lines()'
+       y = league.ave,                # Specify mapping variables, lines
+       type = "l",                    # Specify "line" (unless using 'lines()')
+       pch = 16,                      # Specify character type
+       cex = 1,                       # Specify size
+       col = "deepskyblue4")          # Specify color
+
+points(x = league.year, 
+       y = league.ave , 
+       type = "p", 
+       pch = 16, 
+       cex = 0.75, 
+       col = "deepskyblue4")          # Specify same, points
+
+points(x = league.year[142],
+       y = league.ave[142],       # Mapping 2012 league average
+       type = "p",                # Specify type "point"
+       col = "gray50",            # Point color
+       pch = 1,                   # Point type ("circle")
+       cex = 3)                   # Point size
+
+points(x = league.year[54],
+       y = league.ave[54],
+       type = "p",
+       col = "gray50",
+       pch = 1,
+       cex = 3)                   # Mapping 1924 league average
+
+text(x = league.year[142],
+     y = league.ave[142],               # Labels 2012 stat
+     labels = "7.5",                    # Specifies text
+     col = "deepskyblue4",              # Specifies color
+     adj = c(0.5, -0.5),                # Vertical adjustment
+     cex = 2.5,                         # Size
+     las = 1)                           # Bold
+
+text(x = league.year[54],
+     y = league.ave[54], 
+     labels = "2.7",
+     col = "deepskyblue4", 
+     adj = c(0.5, 1.25), 
+     cex = 2.5,
+     las = 1)                           # Labels 1924 stat
+
+text(x = league.year[142],
+     y = league.ave[142],               # Labels 2012 text
+     labels = "2012\nLeague average",   # Specifies text
+     col = "black",                     # Specifies color
+     adj = c(0.5, -1.35),               # Vertical adjustment
+     cex = 1.25,                        # Size
+     las = 1)                           # Bold
+
+text(x = league.year[54],
+     y = league.ave[54], 
+     labels = "League average\n1924",
+     col = "black", 
+     adj = c(0.5, 2), 
+     cex = 1.25,
+     las = 1)                           # Labels 1924 text
+
+
+ext_dist <- c(47, 76, 93, 99, 103, 138)             # Vector of value positions
+est_dist <- c(1.3, 1.8, 2.8, 7.9, 1.8, 3.8)         # Vector of estimated y-axis
+
+segments(x0 = league.year[ext_dist],                # Staring x-axis coordinate
+         y0 = league.ave[ext_dist],                 # Starting y-axis coordinates
+         y1 = c(est_dist),                          # Ending y-axis coordinates
+         col = "gray80")                            # Specified color
+
+txt <- c("U.S. enters\nWorld War I.",
+         "Players return\nfrom World War II",
+         "Strike zone enlarged\nfrom 1963-68.",
+         paste0("Pitching had become so dominant\n",
+                "in the 1960s that the mound\n",
+                "was lowered in 1969."),
+         "Designated hitter\nrule took effect.",
+         "Mitchell report\non steroids.")           # Vector of custom labels
+
+new_dist <- c(est_dist[1] - 0.3,
+              est_dist[2] - 0.3,
+              est_dist[3] - 0.3,
+              est_dist[4] + 0.5 ,
+              est_dist[5] - 0.3,
+              est_dist[6] - 0.3)                    # Adjust distances for text
+
+text(x = league.year[ext_dist],                     # All exact x-axis distances
+     y = new_dist,                                  # All adjusted y-axis distances
+     labels = txt,                                  # All custom text in 'annotate'
+     col = "gray80")
+  
+
+index <- which(year <= 2012 & year >= 1900)   # Index rows before 2013, after 1900
+
+ave.so <- ave.so[index]                       # Subset team averages
+year <- year[index]                           # Subset years
+
+index <- which(league.year <= 2012 
+               & league.year >= 1900)         # Index rows before 2013, after 1900
+
+league.ave <- league.ave[index]               # Subset league averages
+league.year <- league.year[index]             # Subset years
+
+
+plot.new()
+
+plot.window(xlim = c(1900, 2012), 
+            ylim = c(ave.so.min, 
+                     ave.so.max))
+
+points(x = year, 
+       y = ave.so,
+       col = "gray85",
+       pch = 16,
+       cex = 0.75)
+
+axis(side = 1,
+     lwd = 1,                                 # Line width reduced
+     hadj = -0.05,                            # Adjust label horizontally
+     pos = 0,                                 # Adjust line vertically
+     padj = -2.25,                            # Adjust label vertically
+     cex.axis = 0.75,                         # Adjust font size
+     tck = -0.0075,                           # Adjust tick size
+     at = seq(from = 1900, 
+              to = 2010, 
+              by = 10))
+
+abline(h = 0, 
+       col = "black", 
+       lwd = 2)                               # Thicker x-axis line
+
+axis(side = 4,
+     lwd = 0,
+     las = 1, 
+     pos = 2015,                              # Slight horizontal adjustment
+     col.axis = "gray85",
+     at = seq(from = 0,
+              to = 9, 
+              by = 1), 
+     font.axis = 2)
+
+abline(h = 1:9,
+       lty = "dotted",
+       col = "gray85")
+
+mtext(text = "Strikeouts on the Rise",
+      padj = 1.1,                                     # Slight height adjustment
+      adj = 0,
+      family = "serif",
+      col = "black",
+      cex = 2)
+
+mtext(text = paste0("There were more strikeouts in",
+                    " 2012 than at any other time ",
+                    "in major league history."),
+      padj = 4.5,                                     # Slight height adjustment
+      adj = 0,
+      family = "serif",
+      col = "gray30",
+      cex = 1)
+
+points(x = league.year[142- 29],                  # Adjusted by 29 years
+       y = league.ave[142- 29],                   # Adjusted by 29 years
+       type = "p",
+       col = "gray50",
+       pch = 1,
+       cex = 1.5)                                 # Decreased circle size
+
+points(x = league.year[54- 29],                   # Adjusted by 29 years
+       y = league.ave[54- 29],                    # Adjusted by 29 years
+       type = "p",
+       col = "gray50",
+       pch = 1,
+       cex = 1.5)                                 # Decreased circle size
+
+text(x = league.year[142 - 29],                   # Adjusted by 29 years
+     y = league.ave[142- 29],                     # Adjusted by 29 years
+     labels = "7.5",
+     font = 2,                                    # Make bold
+     col = "deepskyblue4", 
+     adj = c(0.5, -0.6), 
+     cex = 1.65,                                  # Slightly smaller 
+     las = 1)
+
+text(x = league.year[54- 29],                     # Adjusted by 29 years
+     y = league.ave[54- 29],                      # Adjusted by 29 years
+     labels = "2.7",
+     font = 2,                                    # Make bold
+     col = "deepskyblue4", 
+     adj = c(0.5, 1.7),                           # Height adjusted
+     cex = 1.65,                                  # Slightly smaller 
+     las = 1)
+
+text(x = league.year[142- 29],                    # Adjusted by 29 years
+     y = league.ave[142- 29],                     # Adjusted by 29 years
+     labels = "2012\nLeague average",
+     col = "black", 
+     xpd = NA,                                    # Allow text overflow
+     font = 2,                                    # Make bold
+     adj = c(0.5, -1.7),                          # Height adjusted
+     cex = 0.75,                                  # Slightly smaller 
+     las = 1)
+
+text(x = league.year[54- 29],                     # Adjusted by 29 years
+     y = league.ave[54- 29],                      # Adjusted by 29 years
+     labels = "League average\n1924",
+     col = "black", 
+     font = 2,                                    # Make bold
+     adj = c(0.5, 2.75),                          # Height adjusted
+     cex = 0.75,                                  # Slightly smaller 
+     las = 1)
+
+ext_dist <- c(47, 76, 93, 99, 103, 138) - 29      # Adjusted by 29 years
+est_dist <- c(1.3, 1.8, 2.8, 7.9, 1.8, 3.8)
+
+segments(x0 = league.year[ext_dist],
+         y0 = league.ave[ext_dist],
+         y1 = c(est_dist),
+         col = "gray80")
+
+txt <- c("U.S. enters\nWorld War I.",
+         "Players return\nfrom World War II",
+         "Strike zone enlarged\nfrom 1963-68.",
+         paste0("Pitching had become so dominant\n",
+                "in the 1960s that the mound\n",
+                "was lowered in 1969."),
+         "Designated hitter\nrule took effect.",
+         "Mitchell report\non steroids.")
+
+new_dist <- c(est_dist[1] - 0.3,
+              est_dist[2] - 0.3,
+              est_dist[3] - 0.3,
+              est_dist[4] + 0.575,                # Minor adjustment
+              est_dist[5] - 0.3,
+              est_dist[6] - 0.3)
+
+text(x = league.year[ext_dist],
+     y = new_dist,
+     labels = txt,
+     cex = 0.75,                                  # Slightly smaller
+     col = "gray70")                              # Slightly darker
+
+points(x = league.year, 
+       y = league.ave,
+       type = "l",
+       pch = 16,
+       lwd = 1.5,                                 # Slight increase in width
+       col = "deepskyblue4")                      # Shifted code to overlap lines
+
+library(scales)                                   # Load for easy transparency
+
+points(x = league.year, 
+       y = league.ave , 
+       type = "p", 
+       pch = 16, 
+       cex = 0.75, 
+       col = alpha("deepskyblue4", 0.8))          # Added minor transparency
+
+points(x = league.year, 
+       y = league.ave , 
+       type = "p", 
+       pch = 1, 
+       cex = 0.75, 
+       col = alpha("white", 0.25))                # Faint transparent borders
+
+segments(x0 = 1900, 
+         x1 = 1931,
+         y0 = 9, 
+         y1 = 9, 
+         col = "white", 
+         lwd = 3)                 # Overwrite portion of 'abline()'
+
+text(x = 1900.15,
+     y = 9, 
+     labels = "Strikeouts per game per team", 
+     col = "gray35", 
+     adj = 0.175, 
+     cex = 0.8, 
+     font = 2)                    # Add legend title
+
+text(x = 1926.315,
+     y = 9, 
+     labels = "(by batters)", 
+     col = "gray70", 
+     cex = 0.75)                  # Add legend 
+
+text(x = 1907,
+     y = 8.6, 
+     labels = "League average", 
+     col = "deepskyblue4", 
+     cex = 0.75)                  # Add legend parenthesis
+
+segments(x0 = 1895.85, 
+         x1 = 1899,
+         y0 = 8.6, 
+         y1 = 8.6,
+         col = "deepskyblue4",
+         lwd = 1.75)              # Add legend line
+
+points(x = c(1895.85, 1899),
+       y = c(8.6, 8.6),
+       xpd = NA,
+       col = alpha("deepskyblue4", 0.8),
+       pch = 16,
+       cex = 0.5)                 # Add legend points
+
+points(x = c(1895.85, 1899),
+       y = c(8.6, 8.6),
+       xpd = NA,
+       col = alpha("white", 0.25),
+       pch = 3,
+       cex = 0.5)                 # Add legend point outlines
+
+# new
+
+points(x = dat.one.team$yearID,
+       y = dat.one.team$ave.so,
+       type = "o",
+       pch = 19,
+       col = "orange")
+
+})
+
+```
+

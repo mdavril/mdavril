@@ -1,0 +1,41 @@
+---
+title: "cluster"
+author: "Manuel Davril"
+date: "December 2021"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+# Cluster Analysis 
+
+## data
+```{r}
+library(readr)
+library(cluster)
+cluster_data <- read.csv("cluster-r.csv")
+```
+
+## check
+```{r warning=FALSE, message=FALSE}
+head(cluster_data)
+```
+## Standardize the data
+```{r}
+standardized <- scale(cluster_data[-1])
+```
+
+## kmeans 
+```{r}
+groups <- kmeans(standardized, 3)
+```
+
+## clusters 
+```{r}
+clusplot(standardized, groups$cluster)
+```
+## Summarize data
+```{r}
+groups$size  
+```
+
